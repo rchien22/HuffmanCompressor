@@ -4,7 +4,8 @@
 
 using namespace std;
 
-struct Node {
+struct Node
+{
     char ch;
     int freq;
 
@@ -26,12 +27,11 @@ struct Node {
         left = leftNode;
         right = rightNode;
     }
-    
 };
 
 struct CompareNodes
 {
-    bool operator()(const shared_ptr<Node>& a, const shared_ptr<Node>& b) const
+    bool operator()(const shared_ptr<Node> &a, const shared_ptr<Node> &b) const
     {
         return (a->freq > b->freq);
     }
