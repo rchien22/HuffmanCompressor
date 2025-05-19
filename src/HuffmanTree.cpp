@@ -14,7 +14,7 @@ void HuffmanTree::build(const unordered_map<char, int> &freqMap)
         minHeap.push(make_shared<Node>(pair.first, pair.second));
     }
 
-    // Combine nodes
+    // Combine nodes until a single root node remains
     while (minHeap.size() > 1)
     {
         auto left = minHeap.top();
@@ -38,6 +38,7 @@ void HuffmanTree::build(const unordered_map<char, int> &freqMap)
 }
 
 // Traverse the Huffman tree recursively to assign codes to each char
+// Left = '0', Right = '1'
 void HuffmanTree::buildCodeTable(const shared_ptr<Node> &node, const string &path)
 {
     if (!node)
@@ -57,6 +58,7 @@ void HuffmanTree::buildCodeTable(const shared_ptr<Node> &node, const string &pat
     buildCodeTable(node->right, path + "1");
 }
 
+// Returns the root node of the current tree
 shared_ptr<Node> HuffmanTree::getRoot() const
 {
     return root;
@@ -75,6 +77,7 @@ void HuffmanTree::serialize(ostream &outFile) const
     serializeHelper(root, outFile);
 }
 
+// Helper function: reconstructs tree using preorder traversal from stream
 void HuffmanTree::serializeHelper(const shared_ptr<Node> &node, ostream &outFile) const
 {
     if (!node)
@@ -92,5 +95,34 @@ void HuffmanTree::serializeHelper(const shared_ptr<Node> &node, ostream &outFile
         outFile.put('0');
         serializeHelper(node->left, outFile);
         serializeHelper(node->right, outFile);
+    }
+}
+
+// Loads a tree from a stream
+void HuffmanTree::deserialize(istream &in)
+{
+    root = deserializeHelper(in);
+    codeTable.clear();
+    buildCodeTable(root, "");
+}
+
+// Reconstructs tree from stream using marker format
+shared_ptr<Node> HuffmanTree::deserializeHelper(istream &in)
+{
+    char marker;
+    if (!in.get(marker))
+        return nullptr;
+
+    if (marker == '1')
+    {
+        char ch;
+        in.get(ch);
+        return make_shared<Node>(ch, 0);
+    }
+    else
+    {
+        auto left = deserializeHelper(in);
+        auto right = deserializeHelper(in);
+        return make_shared<Node>(0, left, right);
     }
 }

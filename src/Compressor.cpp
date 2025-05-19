@@ -1,8 +1,10 @@
 #include "Compressor.h"
+#include "HuffmanTree.h"
 #include <fstream>
 #include <iostream>
 #include <bitset>
 #include <vector>
+#include <sstream>
 
 using namespace std;
 
@@ -31,45 +33,113 @@ unordered_map<char, int> analyzeFreq(const string &fileName)
     return freqMap;
 }
 
-void encodeFile(const string &inputPath, const string &outputPath,
-                const unordered_map<char, string> &codeTable)
+// Encodes input using Huffman codes and writes a .huff file
+// Format: [4-byte treeSize][tree][1-byte padding][bitstream]
+void encodeFile(const string &inputPath,
+                const string &outputPath, const HuffmanTree &tree)
 {
     ifstream inFile(inputPath, ios::binary);
     ofstream outFile(outputPath, ios::binary);
 
     if (!inFile || !outFile)
     {
-        cerr << "Error opening input / output file!\n";
+        cerr << "Error opening input/output file.\n";
         return;
     }
 
-    // Holds the combined bits as a string
+    // Serialize the tree into memory
+    stringstream treeBuffer;
+    tree.serialize(treeBuffer);
+    string treeData = treeBuffer.str();
+    uint32_t treeSize = treeData.size();
+
+    // Write 4-byte TREE_SIZE
+    outFile.write(reinterpret_cast<const char *>(&treeSize), sizeof(treeSize));
+
+    // Write TREE bytes
+    outFile.write(treeData.data(), treeSize);
+
+    // Encode actual data to bitstring
     string bitBuffer;
     char c;
-
-    // Convert each char into Huffman code
     while (inFile.get(c))
     {
-        // Append corresponding bitstring
-        bitBuffer += codeTable.at(c);
+        bitBuffer += tree.codeTable.at(c);
     }
 
-    // Convert the string of bits into actual bytes and write to output
-    while (bitBuffer.size() >= 8)
+    // Calculate how many padding bits we need
+    int paddingBits = (8 - (bitBuffer.size() % 8)) % 8;
+    // Write number of padding bits as a single byte
+    outFile.put(static_cast<char>(paddingBits));
+    bitBuffer.append(paddingBits, '0');
+
+    // Write compressed data (byte by byte)
+    for (size_t i = 0; i < bitBuffer.size(); i += 8)
     {
-        bitset<8> byte(bitBuffer.substr(0, 8));
+        bitset<8> byte(bitBuffer.substr(i, 8));
         outFile.put(static_cast<unsigned char>(byte.to_ulong()));
-        bitBuffer.erase(0, 8);
-    }
-
-    // Handle leftover bits (add zeros to make a full byte)
-    if (!bitBuffer.empty())
-    {
-        bitBuffer.append(8 - bitBuffer.size(), '0');
-        bitset<8> finalByte(bitBuffer);
-        outFile.put(static_cast<unsigned char>(finalByte.to_ulong()));
     }
 
     inFile.close();
     outFile.close();
+}
+
+// Decodes a .huff file back into original text file
+// Format: [treeSize][tree][paddingByte][bitstream]
+void decodeFile(const string &inPath, const string &outPath)
+{
+    ifstream in(inPath, ios::binary);
+    ofstream out(outPath, ios::binary);
+
+    if (!in || !out)
+    {
+        cerr << "Error opening input / output file.\n";
+        return;
+    }
+
+    // Read 4-byte tree size
+    uint32_t treeSize;
+    in.read(reinterpret_cast<char *>(&treeSize), sizeof(treeSize));
+
+    // Read serialized tree
+    string treeData(treeSize, '\0');
+    in.read(&treeData[0], treeSize);
+    stringstream treeStream(treeData);
+
+    HuffmanTree tree;
+    tree.deserialize(treeStream);
+
+    // Read 1-byte padding info
+    int paddingBits = in.get();
+
+    // Read remaining data into a bitstring
+    string bitBuffer;
+    char byte;
+    while (in.get(byte))
+    {
+        bitset<8> bits(static_cast<unsigned char>(byte));
+        bitBuffer += bits.to_string();
+    }
+
+    // Remove padding
+    if (paddingBits > 0)
+    {
+        bitBuffer.erase(bitBuffer.end() - paddingBits, bitBuffer.end());
+    }
+
+    // Decode bits using the Huffman tree
+    shared_ptr<Node> current = tree.getRoot();
+    for (char bit : bitBuffer)
+    {
+        current = (bit == '0') ? current->left : current->right;
+
+        if (!current->left && !current->right)
+        {
+            out.put(current->ch);
+            current = tree.getRoot();
+        }
+    }
+
+    in.close();
+    out.close();
 }

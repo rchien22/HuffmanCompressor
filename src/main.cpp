@@ -7,29 +7,44 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
+    // Checks for correct CLI argument count
+    if (argc < 4)
     {
-        cerr << "Missing file name!" << endl;
+        cerr << "Usage:\n"
+             << argv[0] << " compress input.txt output.huff\n"
+             << argv[0] << " decompress input.huff output.txt\n";
         return 1;
     }
 
-    auto freqMap = analyzeFreq(argv[1]);
+    string mode = argv[1];
+    string inputPath = argv[2];
+    string outputPath = argv[3];
 
-    for (const auto &pair : freqMap)
+    // COMPRESSION MODE
+    if (mode == "compress")
     {
-        if (pair.first == '\n')
-            cout << "'\\n': " << pair.second << endl;
-        else if (pair.first == '\t')
-            cout << "'\\t': " << pair.second << endl;
-        else
-            cout << "'" << pair.first << "': " << pair.second << endl;
+        // Analyze our input frequencies
+        auto freqMap = analyzeFreq(inputPath);
+
+        // Build the tree
+        HuffmanTree tree;
+        tree.build(freqMap);
+
+        // Write tree and encoded data to output.huff
+        encodeFile(inputPath, outputPath, tree);
+        cout << "Compression complete! Result: " << outputPath << endl;
+    }
+    // DECOMPRESSION MODE
+    else if (mode == "decompress")
+    {
+        decodeFile(inputPath, outputPath);
+        cout << "Decompression complete! Result: " << outputPath << endl;
+    }
+    else
+    {
+        cerr << "Error: unknown mode. Use 'compress' or 'decompress'." << endl;
+        return 1;
     }
 
-    HuffmanTree tree;
-    tree.build(freqMap);
-    encodeFile(argv[1], "output.huff", tree.codeTable);
-
-    ofstream treeOut("tree.huff", ios::binary);
-    tree.serialize(treeOut);
-    treeOut.close();
+    return 0;
 }

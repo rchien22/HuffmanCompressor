@@ -17,9 +17,12 @@ private:
     // 'path' acculumates the bitstring ("010")
     void buildCodeTable(const shared_ptr<Node> &node, const string &path);
 
-    // Helper function: pre-order traversal
-    void serializeHelper(const shared_ptr<Node>& node, ostream& outFile) const;
-    
+    // Helper function: reconstructs tree using preorder traversal from stream
+    void serializeHelper(const shared_ptr<Node> &node, ostream &outFile) const;
+
+    // Reconstructs tree from stream using marker format
+    shared_ptr<Node> deserializeHelper(istream &in);
+
 public:
     // Maps characters to its corresponding bitstring ('f' -> "010")
     unordered_map<char, string> codeTable;
@@ -34,5 +37,8 @@ public:
     void clear();
 
     // Serializes the tree to an out stream
-    void serialize(ostream& outFile) const;
+    void serialize(ostream &outFile) const;
+
+    // Loads a tree from a stream
+    void deserialize(istream &in);
 };
