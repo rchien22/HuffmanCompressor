@@ -1,14 +1,15 @@
 #include "HuffmanTree.h"
 #include <queue>
+#include <fstream>
 
 // This builds the Huffman Tree using a min-heap (priority queue)
-void HuffmanTree::build(const unordered_map<char, int>& freqMap)
+void HuffmanTree::build(const unordered_map<char, int> &freqMap)
 {
     // Priority Queue ordered by frequency (smallest at root)
     priority_queue<shared_ptr<Node>, vector<shared_ptr<Node>>, CompareNodes> minHeap;
 
     // Creates a leaf node for each char and pushes into heap
-    for (const auto& pair : freqMap)
+    for (const auto &pair : freqMap)
     {
         minHeap.push(make_shared<Node>(pair.first, pair.second));
     }
@@ -37,7 +38,7 @@ void HuffmanTree::build(const unordered_map<char, int>& freqMap)
 }
 
 // Traverse the Huffman tree recursively to assign codes to each char
-void HuffmanTree::buildCodeTable(const shared_ptr<Node>& node, const string& path)
+void HuffmanTree::buildCodeTable(const shared_ptr<Node> &node, const string &path)
 {
     if (!node)
         return;
@@ -66,4 +67,30 @@ void HuffmanTree::clear()
 {
     root = nullptr;
     codeTable.clear();
+}
+
+// Serializes the tree to an out stream
+void HuffmanTree::serialize(ostream &outFile) const
+{
+    serializeHelper(root, outFile);
+}
+
+void HuffmanTree::serializeHelper(const shared_ptr<Node> &node, ostream &outFile) const
+{
+    if (!node)
+        return;
+
+    // If leaf: write marker + char
+    if (!node->left && !node->right)
+    {
+        outFile.put('1');
+        outFile.put(node->ch);
+    }
+    else
+    // If internal node: write marker
+    {
+        outFile.put('0');
+        serializeHelper(node->left, outFile);
+        serializeHelper(node->right, outFile);
+    }
 }
