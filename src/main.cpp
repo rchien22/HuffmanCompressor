@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        cerr << "Missing command line argument for file name!" << endl;
+        cerr << "Missing file name!" << endl;
         return 1;
     }
 
