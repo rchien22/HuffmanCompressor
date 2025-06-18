@@ -2,8 +2,6 @@
 
 #include <memory>
 
-using namespace std;
-
 // Node in the Huffman Tree
 struct Node
 {
@@ -11,8 +9,8 @@ struct Node
     int freq; // Frequency of the character
 
     // Pointers to left and right child nodes in the tree
-    shared_ptr<Node> left;
-    shared_ptr<Node> right;
+    std::shared_ptr<Node> left;
+    std::shared_ptr<Node> right;
 
     // Leaf node constructor
     Node(char c, int f)
@@ -24,7 +22,7 @@ struct Node
     }
 
     // Internal node constructor (only frequency)
-    Node(int f, shared_ptr<Node> leftNode, shared_ptr<Node> rightNode)
+    Node(int f, std::shared_ptr<Node> leftNode, std::shared_ptr<Node> rightNode)
     {
         ch = '\0';
         freq = f;
@@ -37,7 +35,7 @@ struct Node
 // Enable use in a min-heap
 struct CompareNodes
 {
-    bool operator()(const shared_ptr<Node> &a, const shared_ptr<Node> &b) const
+    bool operator()(const std::shared_ptr<Node> &a, const std::shared_ptr<Node> &b) const
     {
         return (a->freq > b->freq);
     }

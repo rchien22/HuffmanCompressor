@@ -3,15 +3,15 @@
 #include <fstream>
 
 // This builds the Huffman Tree using a min-heap (priority queue)
-void HuffmanTree::build(const unordered_map<char, int> &freqMap)
+void HuffmanTree::build(const std::unordered_map<char, int> &freqMap)
 {
     // Priority Queue ordered by frequency (smallest at root)
-    priority_queue<shared_ptr<Node>, vector<shared_ptr<Node>>, CompareNodes> minHeap;
+    std::priority_queue<std::shared_ptr<Node>, std::vector<std::shared_ptr<Node>>, CompareNodes> minHeap;
 
     // Creates a leaf node for each char and pushes into heap
     for (const auto &pair : freqMap)
     {
-        minHeap.push(make_shared<Node>(pair.first, pair.second));
+        minHeap.push(std::make_shared<Node>(pair.first, pair.second));
     }
 
     // Combine nodes until a single root node remains
@@ -24,7 +24,7 @@ void HuffmanTree::build(const unordered_map<char, int> &freqMap)
 
         // New parent node with their combined frequencies
         int combinedFreq = left->freq + right->freq;
-        auto parent = make_shared<Node>(combinedFreq, left, right);
+        auto parent = std::make_shared<Node>(combinedFreq, left, right);
 
         minHeap.push(parent);
     }
@@ -39,7 +39,7 @@ void HuffmanTree::build(const unordered_map<char, int> &freqMap)
 
 // Traverse the Huffman tree recursively to assign codes to each char
 // Left = '0', Right = '1'
-void HuffmanTree::buildCodeTable(const shared_ptr<Node> &node, const string &path)
+void HuffmanTree::buildCodeTable(const std::shared_ptr<Node> &node, const std::string &path)
 {
     if (!node)
         return;
@@ -59,7 +59,7 @@ void HuffmanTree::buildCodeTable(const shared_ptr<Node> &node, const string &pat
 }
 
 // Returns the root node of the current tree
-shared_ptr<Node> HuffmanTree::getRoot() const
+std::shared_ptr<Node> HuffmanTree::getRoot() const
 {
     return root;
 }
@@ -72,13 +72,13 @@ void HuffmanTree::clear()
 }
 
 // Serializes the tree to an out stream
-void HuffmanTree::serialize(ostream &outFile) const
+void HuffmanTree::serialize(std::ostream &outFile) const
 {
     serializeHelper(root, outFile);
 }
 
 // Helper function: reconstructs tree using preorder traversal from stream
-void HuffmanTree::serializeHelper(const shared_ptr<Node> &node, ostream &outFile) const
+void HuffmanTree::serializeHelper(const std::shared_ptr<Node> &node, std::ostream &outFile) const
 {
     if (!node)
         return;
@@ -86,20 +86,20 @@ void HuffmanTree::serializeHelper(const shared_ptr<Node> &node, ostream &outFile
     // If leaf: write marker + char
     if (!node->left && !node->right)
     {
-        outFile.put('1');
+        outFile.put(LEAF_MARKER);
         outFile.put(node->ch);
     }
     else
     // If internal node: write marker
     {
-        outFile.put('0');
+        outFile.put(NODE_MARKER);
         serializeHelper(node->left, outFile);
         serializeHelper(node->right, outFile);
     }
 }
 
 // Loads a tree from a stream
-void HuffmanTree::deserialize(istream &in)
+void HuffmanTree::deserialize(std::istream &in)
 {
     root = deserializeHelper(in);
     codeTable.clear();
@@ -107,22 +107,22 @@ void HuffmanTree::deserialize(istream &in)
 }
 
 // Reconstructs tree from stream using marker format
-shared_ptr<Node> HuffmanTree::deserializeHelper(istream &in)
+std::shared_ptr<Node> HuffmanTree::deserializeHelper(std::istream &in)
 {
     char marker;
     if (!in.get(marker))
         return nullptr;
 
-    if (marker == '1')
+    if (marker == LEAF_MARKER)
     {
         char ch;
         in.get(ch);
-        return make_shared<Node>(ch, 0);
+        return std::make_shared<Node>(ch, 0);
     }
     else
     {
         auto left = deserializeHelper(in);
         auto right = deserializeHelper(in);
-        return make_shared<Node>(0, left, right);
+        return std::make_shared<Node>(0, left, right);
     }
 }
